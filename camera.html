@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -40,11 +40,15 @@
     </div>
 
     <script>
-        // ========== KONFIGURASI ==========
-        // Ganti dengan URL Web App GAS Anda (doPost)
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyuvVFPCAcUS8G6Jmz-vfbM_hppSaZt4uckPQGdHkg/exec'; // <-- GANTI!
+        // ================================================================
+        // KONFIGURASI
+        // ================================================================
+        // GANTI URL INI dengan URL Web App GAS Anda (doPost)
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycb.../exec'; // <-- GANTI!
 
-        // ========== ELEMEN ==========
+        // ================================================================
+        // ELEMEN
+        // ================================================================
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -53,38 +57,76 @@
         const statusEl = document.getElementById('status');
         const captureBtn = document.getElementById('captureBtn');
         const uploadBtn = document.getElementById('uploadBtn');
-        const switchBtn = document.getElementById('switchBtn');
 
         let stream = null;
         let facingMode = 'environment';
         let capturedDataURL = null;
-        let counterId = null; // akan diisi dari parameter URL
+        let counterId = null;
 
-        // ========== AMBIL PARAMETER URL ==========
-        const params = new URLSearchParams(window.location.search);
-        counterId = params.get('id'); // misal: ?id=123
+        // ================================================================
+        // AMBIL PARAMETER URL
+        // ================================================================
+        function getCounterIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) {
+                const parsed = parseInt(id, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    return parsed;
+                }
+            }
+            return null;
+        }
 
-        // ========== FUNGSI KAMERA ==========
+        counterId = getCounterIdFromURL();
+        console.log('🔍 counterId:', counterId);
+
+        if (!counterId) {
+            statusEl.textContent = '❌ ID counter tidak ditemukan di URL.';
+            statusEl.style.color = '#ff6b6b';
+            // Tampilkan alert tapi tetap izinkan kamera (untuk debugging)
+            setTimeout(() => {
+                alert('⚠️ ID counter tidak ditemukan di URL.\nPastikan URL menyertakan ?id=angka');
+            }, 500);
+        } else {
+            statusEl.textContent = '📷 Menunggu kamera...';
+        }
+
+        // ================================================================
+        // FUNGSI KAMERA
+        // ================================================================
         function startCamera(mode) {
-            statusEl.textContent = 'Mengakses kamera...';
+            statusEl.textContent = '🔍 Mengakses kamera...';
+            statusEl.style.color = '#ffd93d';
             const constraints = {
-                video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
+                video: {
+                    facingMode: mode,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
                 audio: false
             };
+
             if (stream) {
                 stream.getTracks().forEach(t => t.stop());
             }
+
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(s => {
                     stream = s;
                     video.srcObject = s;
-                    video.onloadedmetadata = () => { video.play(); statusEl.textContent = 'Kamera siap.'; };
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        statusEl.textContent = '✅ Kamera siap.';
+                        statusEl.style.color = '#51cf66';
+                    };
                     facingMode = mode;
                 })
                 .catch(err => {
-                    console.error(err);
+                    console.error('❌ Error akses kamera:', err);
                     statusEl.textContent = '❌ Gagal akses kamera: ' + err.message;
-                    alert('Tidak dapat mengakses kamera. Pastikan Anda memberikan izin dan menggunakan HTTPS.');
+                    statusEl.style.color = '#ff6b6b';
+                    alert('Tidak dapat mengakses kamera.\nPastikan Anda memberikan izin dan menggunakan HTTPS.');
                 });
         }
 
@@ -95,7 +137,10 @@
         }
 
         function capture() {
-            if (!stream) return;
+            if (!stream) {
+                alert('Kamera belum siap. Tunggu sebentar.');
+                return;
+            }
             const w = video.videoWidth || 640;
             const h = video.videoHeight || 480;
             canvas.width = w;
@@ -108,7 +153,8 @@
             video.style.display = 'none';
             captureBtn.style.display = 'none';
             uploadBtn.style.display = 'inline-block';
-            statusEl.textContent = 'Foto diambil. Klik "Unggah" untuk simpan.';
+            statusEl.textContent = '📸 Foto diambil. Klik "Unggah" untuk simpan.';
+            statusEl.style.color = '#ffd93d';
         }
 
         function resetUI() {
@@ -117,62 +163,78 @@
             captureBtn.style.display = 'inline-block';
             uploadBtn.style.display = 'none';
             capturedDataURL = null;
-            statusEl.textContent = 'Kamera siap.';
+            statusEl.textContent = '✅ Kamera siap.';
+            statusEl.style.color = '#51cf66';
         }
 
         function closeWindow() {
             if (stream) stream.getTracks().forEach(t => t.stop());
             window.close();
-            // fallback
+            // Fallback jika window.close() tidak berhasil
             window.location.href = 'about:blank';
         }
 
-        // ========== UNGGAH FOTO KE GAS ==========
+        // ================================================================
+        // UNGGAH FOTO KE GAS
+        // ================================================================
         function uploadPhoto() {
             if (!capturedDataURL) {
-                alert('Ambil foto dulu!');
+                alert('📸 Ambil foto dulu!');
                 return;
             }
             if (!counterId) {
-                alert('ID counter tidak ditemukan di URL.');
+                alert('❌ ID counter tidak ditemukan. Tidak dapat mengunggah.');
                 return;
             }
 
             statusEl.textContent = '📤 Mengunggah...';
+            statusEl.style.color = '#ffd93d';
             uploadBtn.disabled = true;
             uploadBtn.innerHTML = '<span class="loader"></span> Mengunggah';
 
             const payload = {
                 action: 'uploadPhoto',
-                counterId: parseInt(counterId),
+                counterId: counterId,
                 photo: capturedDataURL,
                 filename: 'counter_' + counterId + '.jpg'
             };
 
             fetch(GAS_URL, {
                 method: 'POST',
-                mode: 'no-cors',
+                mode: 'no-cors', // karena GAS tidak mendukung CORS
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
-            .then(response => {
+            .then(() => {
+                // Karena mode no-cors, response tidak bisa dibaca,
+                // tapi request tetap terkirim. Kita anggap sukses jika tidak error.
                 statusEl.textContent = '✅ Foto berhasil diunggah! Tutup halaman ini.';
+                statusEl.style.color = '#51cf66';
                 uploadBtn.innerHTML = '✅ Berhasil';
                 uploadBtn.style.background = '#27ae60';
-                alert('Foto berhasil diunggah! Silakan tutup halaman ini dan refresh aplikasi utama.');
+                alert('✅ Foto berhasil diunggah!\nSilakan tutup halaman ini dan refresh aplikasi utama.');
                 setTimeout(() => window.close(), 3000);
             })
             .catch(err => {
-                console.error(err);
+                console.error('❌ Error upload:', err);
                 statusEl.textContent = '❌ Gagal mengunggah: ' + err.message;
-                alert('Gagal mengunggah. Coba lagi.');
+                statusEl.style.color = '#ff6b6b';
+                alert('❌ Gagal mengunggah. Coba lagi.');
                 uploadBtn.disabled = false;
                 uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Unggah';
             });
         }
 
-        // ========== START ==========
-        startCamera('environment');
+        // ================================================================
+        // START
+        // ================================================================
+        if (counterId) {
+            // Jika ada ID, langsung mulai kamera
+            startCamera('environment');
+        } else {
+            // Tetap coba mulai kamera, tapi beri peringatan
+            startCamera('environment');
+        }
     </script>
 </body>
 </html>
