@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Ambil Foto</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:system-ui, sans-serif; }
+        body { background:#0a0a0a; min-height:100vh; display:flex; justify-content:center; align-items:center; }
+        .container { max-width:480px; width:100%; background:#1a1a1a; border-radius:28px; padding:16px; box-shadow:0 10px 40px rgba(0,0,0,0.5); }
+        video { width:100%; border-radius:16px; background:#111; aspect-ratio:1/1; object-fit:cover; }
+        .controls { display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; justify-content:center; }
+        .controls button { flex:1; padding:14px; border:none; border-radius:40px; font-weight:700; font-size:16px; cursor:pointer; transition:0.2s; min-width:80px; }
+        .btn-capture { background:#fff; color:#1e3c72; }
+        .btn-capture:active { transform:scale(0.95); }
+        .btn-switch { background:rgba(255,255,255,0.15); color:#fff; }
+        .btn-close { background:#e74c3c; color:#fff; }
+        .btn-upload { background:#25D366; color:#fff; display:none; }
+        .preview { display:none; width:100%; border-radius:16px; overflow:hidden; margin-top:12px; }
+        .preview img { width:100%; display:block; }
+        .status { color:#aaa; font-size:14px; text-align:center; margin-top:12px; }
+        .loader { display:inline-block; width:20px; height:20px; border:3px solid #fff; border-radius:50%; border-top-color:transparent; animation:spin 1s linear infinite; vertical-align:middle; margin-right:8px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div class="preview" id="preview">
+            <img id="capturedImage" src="" alt="foto" />
+        </div>
+        <div class="controls">
+            <button class="btn-switch" id="switchBtn" onclick="switchCamera()"><i class="fas fa-sync-alt"></i> Ganti</button>
+            <button class="btn-capture" id="captureBtn" onclick="capture()"><i class="fas fa-camera"></i> Ambil</button>
+            <button class="btn-upload" id="uploadBtn" onclick="uploadPhoto()"><i class="fas fa-upload"></i> Unggah</button>
+            <button class="btn-close" onclick="closeWindow()"><i class="fas fa-times"></i> Tutup</button>
+        </div>
+        <div class="status" id="status">Kamera siap.</div>
+    </div>
+
+    <script>
+        // ========== KONFIGURASI ==========
+        // Ganti dengan URL Web App GAS Anda (doPost)
+        const GAS_URL = 'https://script.google.com/macros/s/XXXXX/exec'; // <-- GANTI!
+
+        // ========== ELEMEN ==========
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const preview = document.getElementById('preview');
+        const capturedImg = document.getElementById('capturedImage');
+        const statusEl = document.getElementById('status');
+        const captureBtn = document.getElementById('captureBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const switchBtn = document.getElementById('switchBtn');
+
+        let stream = null;
+        let facingMode = 'environment';
+        let capturedDataURL = null;
+        let counterId = null; // akan diisi dari parameter URL
+
+        // ========== AMBIL PARAMETER URL ==========
+        const params = new URLSearchParams(window.location.search);
+        counterId = params.get('id'); // misal: ?id=123
+
+        // ========== FUNGSI KAMERA ==========
+        function startCamera(mode) {
+            statusEl.textContent = 'Mengakses kamera...';
+            const constraints = {
+                video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
+                audio: false
+            };
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+            }
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(s => {
+                    stream = s;
+                    video.srcObject = s;
+                    video.onloadedmetadata = () => { video.play(); statusEl.textContent = 'Kamera siap.'; };
+                    facingMode = mode;
+                })
+                .catch(err => {
+                    console.error(err);
+                    statusEl.textContent = '❌ Gagal akses kamera: ' + err.message;
+                    alert('Tidak dapat mengakses kamera. Pastikan Anda memberikan izin dan menggunakan HTTPS.');
+                });
+        }
+
+        function switchCamera() {
+            const newMode = facingMode === 'environment' ? 'user' : 'environment';
+            startCamera(newMode);
+            resetUI();
+        }
+
+        function capture() {
+            if (!stream) return;
+            const w = video.videoWidth || 640;
+            const h = video.videoHeight || 480;
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(video, 0, 0, w, h);
+            capturedDataURL = canvas.toDataURL('image/jpeg', 0.92);
+
+            // Tampilkan preview
+            capturedImg.src = capturedDataURL;
+            preview.style.display = 'block';
+            video.style.display = 'none';
+            captureBtn.style.display = 'none';
+            uploadBtn.style.display = 'inline-block';
+            statusEl.textContent = 'Foto diambil. Klik "Unggah" untuk simpan.';
+        }
+
+        function resetUI() {
+            preview.style.display = 'none';
+            video.style.display = 'block';
+            captureBtn.style.display = 'inline-block';
+            uploadBtn.style.display = 'none';
+            capturedDataURL = null;
+            statusEl.textContent = 'Kamera siap.';
+        }
+
+        function closeWindow() {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            window.close(); // jika dibuka sebagai popup
+            // fallback: redirect ke halaman utama
+            window.location.href = 'about:blank';
+        }
+
+        // ========== UNGGAH FOTO KE GAS ==========
+        function uploadPhoto() {
+            if (!capturedDataURL) {
+                alert('Ambil foto dulu!');
+                return;
+            }
+            if (!counterId) {
+                alert('ID counter tidak ditemukan di URL.');
+                return;
+            }
+
+            statusEl.textContent = '📤 Mengunggah...';
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="loader"></span> Mengunggah';
+
+            const payload = {
+                action: 'uploadPhoto',
+                counterId: parseInt(counterId),
+                photo: capturedDataURL,
+                filename: 'counter_' + counterId + '.jpg'
+            };
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'no-cors', // penting karena GAS tidak mendukung CORS
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                // karena mode no-cors, response tidak bisa dibaca, tapi request tetap terkirim
+                // Kita asumsikan berhasil jika tidak ada error jaringan
+                statusEl.textContent = '✅ Foto berhasil diunggah! Tutup halaman ini.';
+                uploadBtn.innerHTML = '✅ Berhasil';
+                uploadBtn.style.background = '#27ae60';
+                // Beri notifikasi ke pengguna
+                alert('Foto berhasil diunggah! Silakan tutup halaman ini dan refresh aplikasi utama.');
+                // Otomatis tutup setelah 3 detik
+                setTimeout(() => window.close(), 3000);
+            })
+            .catch(err => {
+                console.error(err);
+                statusEl.textContent = '❌ Gagal mengunggah: ' + err.message;
+                alert('Gagal mengunggah. Coba lagi.');
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Unggah';
+            });
+        }
+
+        // ========== START ==========
+        startCamera('environment');
+    </script>
+</body>
+</html>
