@@ -42,7 +42,7 @@
     <script>
         // ========== KONFIGURASI ==========
         // Ganti dengan URL Web App GAS Anda (doPost)
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyuvVFPCAcUS8G6Jmz-vfbM_hppSaZt4uckPQGdHkg/exec'; // <-- GANTI!
+        const GAS_URL = 'https://script.google.com/macros/s/XXXXX/exec'; // <-- GANTI!
 
         // ========== ELEMEN ==========
         const video = document.getElementById('video');
@@ -103,7 +103,6 @@
             ctx.drawImage(video, 0, 0, w, h);
             capturedDataURL = canvas.toDataURL('image/jpeg', 0.92);
 
-            // Tampilkan preview
             capturedImg.src = capturedDataURL;
             preview.style.display = 'block';
             video.style.display = 'none';
@@ -123,8 +122,8 @@
 
         function closeWindow() {
             if (stream) stream.getTracks().forEach(t => t.stop());
-            window.close(); // jika dibuka sebagai popup
-            // fallback: redirect ke halaman utama
+            window.close();
+            // fallback
             window.location.href = 'about:blank';
         }
 
@@ -152,19 +151,15 @@
 
             fetch(GAS_URL, {
                 method: 'POST',
-                mode: 'no-cors', // penting karena GAS tidak mendukung CORS
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
             .then(response => {
-                // karena mode no-cors, response tidak bisa dibaca, tapi request tetap terkirim
-                // Kita asumsikan berhasil jika tidak ada error jaringan
                 statusEl.textContent = '✅ Foto berhasil diunggah! Tutup halaman ini.';
                 uploadBtn.innerHTML = '✅ Berhasil';
                 uploadBtn.style.background = '#27ae60';
-                // Beri notifikasi ke pengguna
                 alert('Foto berhasil diunggah! Silakan tutup halaman ini dan refresh aplikasi utama.');
-                // Otomatis tutup setelah 3 detik
                 setTimeout(() => window.close(), 3000);
             })
             .catch(err => {
