@@ -1,0 +1,1054 @@
+ <!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Bali Counter DB Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+        body { background:#f0f4f8; padding:12px; min-height:100vh; display:flex; justify-content:center; }
+        #app { max-width:480px; width:100%; background:#fff; border-radius:28px; box-shadow:0 10px 40px rgba(0,0,0,0.08); padding:16px 16px 24px; position:relative; min-height:95vh; }
+
+        /* Sembunyikan semua footer Google */
+        #footer, .footer, .gs-footer, .gse-footer, .google-footer, .drive-footer, .apps-script-footer,
+        [class*="footer"], [id*="footer"], iframe[src*="google"] {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            position: absolute !important;
+            bottom: -9999px !important;
+        }
+
+        #loginScreen { display:flex; flex-direction:column; padding:30px 10px 20px; min-height:80vh; }
+        #loginScreen .logo { text-align:center; font-size:32px; font-weight:800; color:#1e3c72; margin-bottom:6px; }
+        #loginScreen .logo i { color:#f39c12; }
+        #loginScreen .sub { text-align:center; color:#666; margin-bottom:30px; font-size:14px; }
+        .form-group { margin-bottom:18px; }
+        .form-group label { font-weight:600; font-size:14px; color:#333; display:block; margin-bottom:4px; }
+        .form-group .input-wrap { display:flex; align-items:center; background:#f5f7fa; border-radius:12px; border:1.5px solid #e2e8f0; transition:0.2s; padding:0 12px; }
+        .form-group .input-wrap:focus-within { border-color:#2a5298; background:#fff; box-shadow:0 0 0 3px rgba(42,82,152,0.1); }
+        .form-group .input-wrap input { border:none; background:transparent; padding:14px 8px; font-size:16px; width:100%; outline:none; }
+        .form-group .input-wrap i { color:#999; font-size:18px; min-width:24px; }
+        .toggle-pw { cursor:pointer; color:#888; font-size:18px; padding:8px; }
+        .btn-primary { background:#1e3c72; color:#fff; border:none; padding:16px; border-radius:40px; font-weight:700; font-size:18px; width:100%; cursor:pointer; transition:0.2s; margin-top:6px; }
+        .btn-primary:active { transform:scale(0.97); background:#142b50; }
+        .btn-outline { background:transparent; border:2px solid #1e3c72; color:#1e3c72; padding:14px; border-radius:40px; font-weight:600; width:100%; cursor:pointer; transition:0.2s; text-align:center; }
+        .btn-outline:active { background:#eef2f7; }
+        .auth-link { color:#2a5298; font-weight:600; cursor:pointer; text-decoration:underline; background:none; border:none; font-size:15px; }
+        .auth-link:active { opacity:0.6; }
+        .auth-footer { margin-top:24px; text-align:center; font-size:15px; color:#555; }
+        .auth-footer .auth-link { font-size:15px; }
+
+        #mainApp { display:none; flex-direction:column; gap:16px; }
+        .header { background:linear-gradient(135deg,#1e3c72,#2a5298); color:#fff; padding:18px 20px; border-radius:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+        .header h1 { font-size:20px; font-weight:700; }
+        .header h1 i { margin-right:8px; }
+        .header .user-badge { background:rgba(255,255,255,0.2); padding:6px 16px; border-radius:40px; font-size:13px; display:flex; align-items:center; gap:8px; }
+        .header .user-badge i { cursor:pointer; }
+
+        .stats-row { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+        .stat-card { background:#fff; border-radius:16px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); border:1px solid #edf2f7; text-align:center; }
+        .stat-card .num { font-size:28px; font-weight:800; color:#1e3c72; }
+        .stat-card .label { font-size:12px; color:#777; margin-top:2px; }
+
+        .filter-bar { display:flex; flex-wrap:wrap; gap:10px; background:#fff; padding:12px; border-radius:16px; border:1px solid #edf2f7; }
+        .filter-bar select, .filter-bar input { flex:1 1 120px; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:30px; font-size:14px; background:#f8fafc; outline:none; }
+        .filter-bar select:focus, .filter-bar input:focus { border-color:#2a5298; background:#fff; }
+
+        .chart-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; background:#fff; padding:12px; border-radius:16px; border:1px solid #edf2f7; }
+        .chart-box { position:relative; height:140px; }
+        .chart-box canvas { width:100% !important; height:100% !important; }
+
+        .section-title { font-size:18px; font-weight:700; color:#1e3c72; margin:8px 0 4px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+        .section-title small { font-weight:400; font-size:14px; color:#777; }
+        .section-title .btn-group { display:flex; gap:6px; }
+        .section-title .btn-group button { background:#1e3c72; color:#fff; border:none; padding:6px 14px; border-radius:30px; font-size:12px; cursor:pointer; }
+
+        .card-grid { display:grid; grid-template-columns:1fr; gap:16px; margin-bottom:20px; }
+
+        .card-item { background:#fff; border-radius:20px; padding:16px; border:1px solid #edf2f7; box-shadow:0 2px 8px rgba(0,0,0,0.02); transition:0.2s; cursor:default; }
+        .card-item.dragging { opacity:0.5; transform:scale(0.98); }
+        .card-item.drag-over { border:2px dashed #1e3c72; background:#f0f4ff; }
+        .card-item .drag-handle { cursor:grab; color:#aaa; font-size:18px; margin-bottom:8px; display:block; text-align:center; padding:4px; border-radius:8px; background:#f5f7fa; }
+        .card-item .drag-handle:active { cursor:grabbing; }
+        .card-item .photo-wrap { width:100%; aspect-ratio:1/1; background:#f0f4fa; border-radius:16px; overflow:hidden; margin-bottom:12px; position:relative; border:1px solid #e8ecf2; }
+        .card-item .photo-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
+        .card-item .photo-wrap .placeholder-icon { display:flex; align-items:center; justify-content:center; height:100%; color:#b0c4de; font-size:48px; }
+        .card-item .photo-actions { position:absolute; bottom:8px; right:8px; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+        .card-item .photo-actions button { background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); border:none; color:#fff; padding:6px 10px; border-radius:30px; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:4px; }
+        .card-item .photo-actions button:active { background:rgba(0,0,0,0.8); }
+        .card-item .cname { font-size:18px; font-weight:700; color:#1a2634; }
+        .card-item .street { font-size:14px; color:#5a6a7a; margin:2px 0 6px; display:flex; align-items:center; gap:6px; }
+        .card-item .street i { color:#2a5298; width:16px; }
+        .card-item .contact-list { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:6px 0 8px; }
+        .card-item .contact-item { background:#eef3f9; border-radius:30px; padding:4px 12px 4px 14px; font-size:13px; display:inline-flex; align-items:center; gap:6px; border:1px solid #e2e8f0; }
+        .card-item .contact-item a { color:#25D366; text-decoration:none; font-weight:500; }
+        .card-item .contact-item a:active { opacity:0.6; }
+        .card-item .contact-more-btn { background:transparent; border:1px solid #ccc; border-radius:30px; padding:4px 12px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; color:#555; }
+        .card-item .contact-more-btn:active { background:#eee; }
+        .card-item .email-info { font-size:13px; color:#2a5298; margin:4px 0; display:flex; align-items:center; gap:6px; }
+        .card-item .status { display:inline-block; padding:3px 14px; border-radius:30px; font-size:12px; font-weight:600; margin:4px 0 10px; }
+        .status.aktif { background:#d4edda; color:#155724; }
+        .status.tutup { background:#f8d7da; color:#721c24; }
+        .status.tanpa-staff { background:#fff3cd; color:#856404; }
+        .card-item .actions { display:flex; flex-wrap:wrap; gap:8px; border-top:1px solid #edf2f7; padding-top:12px; margin-top:4px; }
+        .card-item .actions .btn { padding:8px 16px; border-radius:30px; border:none; font-size:13px; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:6px; text-decoration:none; color:#fff; transition:0.15s; flex:1 0 auto; justify-content:center; }
+        .card-item .actions .btn:active { transform:scale(0.95); }
+        .btn-edit { background:#f39c12; }
+        .btn-map { background:#4285F4; }
+        .btn-wa { background:#25D366; }
+        .btn-delete-card { background:#e74c3c; }
+
+        .fab { position:sticky; bottom:16px; left:100%; width:56px; height:56px; background:#1e3c72; color:#fff; border:none; border-radius:30px; font-size:28px; box-shadow:0 6px 20px rgba(30,60,114,0.4); cursor:pointer; display:flex; align-items:center; justify-content:center; margin-left:auto; margin-top:8px; transition:0.2s; }
+        .fab:active { transform:scale(0.9); }
+
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px); align-items:center; justify-content:center; z-index:2000; padding:20px; }
+        .modal-overlay.active { display:flex; }
+        .modal-box { background:#fff; border-radius:28px; padding:28px 24px; max-width:440px; width:100%; max-height:92vh; overflow-y:auto; animation:popIn 0.25s ease; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+        @keyframes popIn { from { opacity:0; transform:scale(0.92) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
+        .modal-box h3 { font-size:22px; color:#1e3c72; margin-bottom:18px; display:flex; align-items:center; gap:10px; }
+        .modal-box .close-modal { margin-left:auto; background:none; border:none; font-size:24px; cursor:pointer; color:#999; padding:0 6px; }
+        .modal-box label { font-weight:600; font-size:14px; display:block; margin-top:14px; margin-bottom:4px; color:#333; }
+        .modal-box input, .modal-box textarea, .modal-box select { width:100%; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:12px; font-size:15px; background:#f8fafc; transition:0.2s; outline:none; }
+        .modal-box input:focus, .modal-box textarea:focus, .modal-box select:focus { border-color:#2a5298; background:#fff; }
+        .modal-box textarea { min-height:60px; resize:vertical; }
+        .modal-box .photo-upload-area { border:2px dashed #d0d8e6; border-radius:16px; padding:20px; text-align:center; color:#888; cursor:pointer; background:#fafcff; margin-top:4px; }
+        .modal-box .photo-upload-area input { display:none; }
+        .modal-box .photo-preview { margin-top:10px; width:100%; aspect-ratio:1/1; border-radius:16px; overflow:hidden; background:#f0f4fa; position:relative; }
+        .modal-box .photo-preview img { width:100%; height:100%; object-fit:cover; }
+        .modal-box .photo-preview .del-photo-btn { position:absolute; top:8px; right:8px; background:rgba(231,76,60,0.9); border:none; color:#fff; padding:6px 12px; border-radius:30px; font-size:13px; cursor:pointer; }
+        .modal-actions { display:flex; gap:12px; margin-top:22px; }
+        .modal-actions .btn-save { background:#1e3c72; color:#fff; border:none; padding:14px; border-radius:40px; flex:1; font-weight:700; font-size:16px; cursor:pointer; }
+        .modal-actions .btn-cancel { background:#e2e8f0; color:#333; border:none; padding:14px 24px; border-radius:40px; font-weight:600; cursor:pointer; }
+
+        /* Lightbox */
+        #lightboxOverlay .modal-box { padding:8px; background:#111; max-width:90vw; max-height:90vh; display:flex; align-items:center; justify-content:center; }
+        #lightboxOverlay .modal-box img { max-width:100%; max-height:85vh; width:auto; height:auto; border-radius:12px; display:block; object-fit:contain; }
+        #lightboxOverlay .close-modal { color:#fff; font-size:30px; position:absolute; right:12px; top:12px; background:none; border:none; z-index:10; }
+
+        /* Contact modal */
+        #contactModal .modal-box { max-width:360px; }
+        #contactModal .contact-item-modal { padding:10px 14px; background:#f5f7fa; border-radius:12px; border:1px solid #e2e8f0; display:flex; align-items:center; gap:10px; }
+        #contactModal .contact-item-modal a { color:#25D366; text-decoration:none; font-weight:500; flex:1; }
+
+        .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(80px); background:#1e3c72; color:#fff; padding:14px 28px; border-radius:40px; font-weight:500; box-shadow:0 6px 20px rgba(0,0,0,0.2); opacity:0; transition:0.4s; z-index:3000; max-width:90%; text-align:center; font-size:15px; }
+        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+        @media (min-width:600px) { #app { max-width:720px; } .card-grid { grid-template-columns:repeat(2,1fr); } }
+        @media (min-width:900px) { #app { max-width:960px; } .card-grid { grid-template-columns:repeat(3,1fr); } }
+        .modal-box::-webkit-scrollbar { width:4px; }
+        .modal-box::-webkit-scrollbar-thumb { background:#ccc; border-radius:8px; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="toast" id="toast"></div>
+
+    <!-- LOGIN -->
+    <div id="loginScreen">
+        <div class="logo"><i class="fas fa-store-alt"></i> Bali Counter DB</div>
+        <div class="sub">Manajemen Data Tour & Wisata</div>
+
+        <div id="loginForm">
+            <div class="form-group">
+                <label>Username / Email</label>
+                <div class="input-wrap"><i class="fas fa-user"></i><input type="text" id="loginUser" placeholder="Masukkan username" /></div>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrap">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPass" placeholder="Masukkan password" />
+                    <span class="toggle-pw" onclick="togglePass('loginPass', this)"><i class="fas fa-eye"></i></span>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="handleLogin()"><i class="fas fa-sign-in-alt"></i> Masuk</button>
+            <div class="auth-footer">
+                <button class="auth-link" onclick="showRegister()">Belum punya akun? Daftar</button> &middot;
+                <button class="auth-link" onclick="showForgot()">Lupa password?</button>
+            </div>
+        </div>
+
+        <div id="registerForm" style="display:none;">
+            <div class="form-group">
+                <label>Username</label>
+                <div class="input-wrap"><i class="fas fa-user"></i><input type="text" id="regUser" placeholder="Buat username" /></div>
+            </div>
+            <div class="form-group">
+                <label>Email (Gmail)</label>
+                <div class="input-wrap"><i class="fas fa-envelope"></i><input type="email" id="regEmail" placeholder="email@gmail.com" /></div>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrap">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="regPass" placeholder="Min. 6 karakter" />
+                    <span class="toggle-pw" onclick="togglePass('regPass', this)"><i class="fas fa-eye"></i></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Konfirmasi Password</label>
+                <div class="input-wrap"><i class="fas fa-check-circle"></i><input type="password" id="regPass2" placeholder="Ulangi password" /></div>
+            </div>
+            <button class="btn-primary" onclick="handleRegister()"><i class="fas fa-user-plus"></i> Daftar</button>
+            <div class="auth-footer">Sudah punya akun? <button class="auth-link" onclick="showLogin()">Login</button></div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="mainApp">
+        <div class="header">
+            <h1><i class="fas fa-store-alt"></i> Counter DB</h1>
+            <div class="user-badge">
+                <i class="fas fa-user-circle"></i> <span id="displayUser">Owner</span>
+                <i class="fas fa-sign-out-alt" onclick="handleLogout()" style="cursor:pointer;margin-left:4px;"></i>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card"><div class="num" id="totalCount">0</div><div class="label">Total Counter</div></div>
+            <div class="stat-card"><div class="num" id="activeCount">0</div><div class="label">Aktif</div></div>
+        </div>
+
+        <div class="filter-bar">
+            <select id="filterArea"><option value="all">Semua Area</option><option value="Canggu">Canggu</option><option value="Seminyak">Seminyak</option><option value="Kuta">Kuta</option><option value="Sanur">Sanur</option><option value="Benoa">Benoa</option></select>
+            <input type="text" id="searchInput" placeholder="Cari counter, jalan..." />
+        </div>
+
+        <div class="chart-row">
+            <div class="chart-box"><canvas id="areaChart"></canvas></div>
+            <div class="chart-box"><canvas id="statusChart"></canvas></div>
+        </div>
+
+        <div class="section-title">
+            <span><i class="fas fa-list"></i> Daftar Counter</span>
+            <div class="btn-group">
+                <button onclick="exportPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button onclick="showImportModal()"><i class="fas fa-file-import"></i> Impor</button>
+                <button id="helpBtn"><i class="fas fa-life-ring"></i> Bantuan</button>
+            </div>
+            <small id="resultCount">0</small>
+        </div>
+        <div class="card-grid" id="cardContainer"></div>
+
+        <button class="fab" id="fabAdd" onclick="openAddModal()" style="display:none;"><i class="fas fa-plus"></i></button>
+    </div>
+
+    <!-- MODALS -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <h3><span id="editModalTitle"><i class="fas fa-pen"></i> Edit Counter</span><button class="close-modal" onclick="closeEditModal()">&times;</button></h3>
+            <form id="editForm" onsubmit="saveEdit(event)">
+                <input type="hidden" id="editId" />
+                <label>Nama Counter *</label>
+                <input type="text" id="editCounter" required />
+                <label>Jalan / Lokasi *</label>
+                <input type="text" id="editJalan" required />
+                <label>Area</label>
+                <input type="text" id="editArea" list="areaList" placeholder="Pilih atau ketik area baru" />
+                <datalist id="areaList"></datalist>
+                <label>Kontak (satu per baris)</label>
+                <textarea id="editKontak" rows="2" placeholder="Leo - 085333735463"></textarea>
+                <label>Email</label>
+                <input type="email" id="editEmail" />
+                <label>Status</label>
+                <select id="editStatus"><option value="Aktif">Aktif</option><option value="Tutup">Tutup</option><option value="Tanpa Staff">Tanpa Staff</option></select>
+                <label>Catatan / Deskripsi</label>
+                <textarea id="editCatatan" rows="2" placeholder="Jam buka, fasilitas, dll."></textarea>
+                <label>Foto Counter (1:1)</label>
+                <div class="photo-upload-area" onclick="document.getElementById('photoInput').click()">
+                    <i class="fas fa-camera" style="font-size:24px;display:block;"></i> Tap untuk upload foto
+                    <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)" />
+                </div>
+                <div class="photo-preview" id="editPhotoPreview" style="display:none;">
+                    <img id="editPhotoImg" src="" alt="preview" />
+                    <button type="button" class="del-photo-btn" onclick="removePhoto()"><i class="fas fa-trash"></i> Hapus</button>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Batal</button>
+                    <button type="submit" class="btn-save"><i class="fas fa-save"></i> Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="lightboxOverlay">
+        <div class="modal-box" style="background:#111;padding:8px;max-width:90vw;display:flex;align-items:center;justify-content:center;">
+            <button class="close-modal" onclick="closeLightbox()">&times;</button>
+            <img id="lightboxImg" src="" alt="foto" style="max-width:100%;max-height:85vh;width:auto;height:auto;border-radius:12px;display:block;object-fit:contain;" />
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="forgotModal">
+        <div class="modal-box">
+            <h3><i class="fas fa-key"></i> Lupa Password<button class="close-modal" onclick="closeForgot()">&times;</button></h3>
+            <p style="margin-bottom:16px;color:#666;">Masukkan email yang terdaftar.</p>
+            <div class="form-group">
+                <label>Email</label>
+                <div class="input-wrap"><i class="fas fa-envelope"></i><input type="email" id="forgotEmail" placeholder="email@gmail.com" /></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeForgot()">Batal</button>
+                <button class="btn-save" onclick="handleForgot()"><i class="fas fa-paper-plane"></i> Kirim</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-box">
+            <h3><i class="fas fa-file-import"></i> Impor Data<button class="close-modal" onclick="closeImportModal()">&times;</button></h3>
+            <p style="margin-bottom:12px;color:#666;">Masukkan ID Spreadsheet atau URL Drive.</p>
+            <div class="form-group">
+                <label>ID / URL Sumber</label>
+                <div class="input-wrap"><i class="fas fa-link"></i><input type="text" id="importSource" /></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeImportModal()">Batal</button>
+                <button class="btn-save" onclick="handleImport()"><i class="fas fa-cloud-download-alt"></i> Impor</button>
+            </div>
+            <div id="importResult" style="margin-top:12px;font-size:14px;color:#555;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal-box" style="max-width:340px;">
+            <h3 style="font-size:18px;"><i class="fas fa-exclamation-triangle" style="color:#e74c3c;"></i> Konfirmasi</h3>
+            <p id="confirmMessage" style="margin:12px 0 20px;color:#555;"></p>
+            <div class="modal-actions" style="justify-content:center;">
+                <button class="btn-cancel" onclick="closeConfirmModal(false)">Batal</button>
+                <button class="btn-save" style="background:#e74c3c;" onclick="closeConfirmModal(true)">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="contactModal">
+        <div class="modal-box" style="max-width:360px;">
+            <h3><i class="fab fa-whatsapp"></i> Pilih Kontak<button class="close-modal" onclick="closeContactModal()">&times;</button></h3>
+            <div id="contactList" style="display:flex;flex-direction:column;gap:8px;margin:12px 0;"></div>
+            <button class="btn-cancel" onclick="closeContactModal()" style="width:100%;">Tutup</button>
+        </div>
+    </div>
+
+    <input type="file" id="fileUploadInput" accept="image/*" style="display:none;" />
+</div>
+
+<script>
+    // ================================================================
+    // VARIABEL GLOBAL
+    // ================================================================
+    var currentUser = null;
+    var isOwner = false;
+    var counters = [];
+    var currentFilterArea = 'all';
+    var currentSearch = '';
+    var editingId = null;
+    var tempPhotoData = null;
+    var confirmResolve = null;
+    var dragStartIndex = null;
+    var currentUploadCounterId = null;
+
+    // ================================================================
+    // TOAST & KONFIRMASI
+    // ================================================================
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+    }
+
+    function showConfirmModal(message) {
+        return new Promise(function(resolve) {
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmModal').classList.add('active');
+            confirmResolve = resolve;
+        });
+    }
+    function closeConfirmModal(confirmed) {
+        document.getElementById('confirmModal').classList.remove('active');
+        if (confirmResolve) {
+            confirmResolve(confirmed);
+            confirmResolve = null;
+        }
+    }
+
+    // ================================================================
+    // AUTH
+    // ================================================================
+    function showLogin() {
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('registerForm').style.display = 'none';
+    }
+    function showRegister() {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'block';
+    }
+    function togglePass(id, el) {
+        var inp = document.getElementById(id);
+        if (inp.type === 'password') { inp.type = 'text'; el.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
+        else { inp.type = 'password'; el.innerHTML = '<i class="fas fa-eye"></i>'; }
+    }
+
+    function handleLogin() {
+        var u = document.getElementById('loginUser').value.trim();
+        var p = document.getElementById('loginPass').value.trim();
+        if (!u || !p) { showToast('Harap isi username dan password.'); return; }
+        google.script.run.withSuccessHandler(function(response) {
+            if (response.success) {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.setItem('username', response.username);
+                sessionStorage.setItem('role', response.role);
+
+                currentUser = response.username;
+                isOwner = response.role === 'owner';
+                document.getElementById('displayUser').textContent = currentUser;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'flex';
+                var fabAdd = document.getElementById('fabAdd');
+                fabAdd.style.display = isOwner ? 'flex' : 'none';
+                loadData();
+                showToast('Selamat datang, ' + currentUser + '!');
+            } else {
+                showToast(response.message);
+            }
+        }).withFailureHandler(function(err) {
+            showToast('Error: ' + err.message);
+        }).loginUser(u, p);
+    }
+
+    function handleRegister() {
+        var u = document.getElementById('regUser').value.trim();
+        var e = document.getElementById('regEmail').value.trim();
+        var p = document.getElementById('regPass').value;
+        var p2 = document.getElementById('regPass2').value;
+        if (!u || !e || !p || !p2) { showToast('Semua field wajib diisi.'); return; }
+        if (p.length < 6) { showToast('Password minimal 6 karakter.'); return; }
+        if (p !== p2) { showToast('Password tidak cocok.'); return; }
+        google.script.run.withSuccessHandler(function(response) {
+            if (response.success) {
+                showToast(response.message);
+                showLogin();
+                document.getElementById('regUser').value = '';
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regPass').value = '';
+                document.getElementById('regPass2').value = '';
+            } else {
+                showToast(response.message);
+            }
+        }).withFailureHandler(function(err) {
+            showToast('Error: ' + err.message);
+        }).registerUser(u, p, e);
+    }
+
+    function handleLogout() {
+        sessionStorage.removeItem('isLoggedIn');
+        sessionStorage.removeItem('username');
+        sessionStorage.removeItem('role');
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        isOwner = false;
+        currentUser = null;
+        showToast('Anda telah logout.');
+    }
+
+    function showForgot() { document.getElementById('forgotModal').classList.add('active'); }
+    function closeForgot() { document.getElementById('forgotModal').classList.remove('active'); }
+    function handleForgot() {
+        var email = document.getElementById('forgotEmail').value.trim();
+        if (!email) { showToast('Masukkan email.'); return; }
+        google.script.run.withSuccessHandler(function(response) {
+            if (response.success) {
+                showToast(response.message);
+                closeForgot();
+                document.getElementById('forgotEmail').value = '';
+            } else {
+                showToast(response.message);
+            }
+        }).withFailureHandler(function(err) {
+            showToast('Error: ' + err.message);
+        }).forgotPassword(email);
+    }
+
+    // ================================================================
+    // DATA COUNTER
+    // ================================================================
+    function loadData() {
+        google.script.run.withSuccessHandler(function(data) {
+            counters = data;
+            renderCards();
+        }).withFailureHandler(function(err) {
+            showToast('Gagal memuat data: ' + err.message);
+        }).getAllCounters();
+    }
+
+    function getFilteredData() {
+        var area = currentFilterArea;
+        var search = currentSearch.toLowerCase().trim();
+        return counters.filter(function(item) {
+            var matchArea = area === 'all' || item.area === area;
+            var matchSearch = !search ||
+                item.counter.toLowerCase().includes(search) ||
+                item.jalan.toLowerCase().includes(search) ||
+                item.kontak.some(function(k) { return k.nama.toLowerCase().includes(search) || k.nomor.includes(search); });
+            return matchArea && matchSearch;
+        });
+    }
+
+    var areaChartInstance = null;
+    var statusChartInstance = null;
+
+    function renderCards() {
+        var filtered = getFilteredData();
+        var container = document.getElementById('cardContainer');
+        document.getElementById('totalCount').textContent = counters.length;
+        document.getElementById('activeCount').textContent = counters.filter(function(c) { return c.status === 'Aktif'; }).length;
+        document.getElementById('resultCount').textContent = filtered.length + ' ditemukan';
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px 0;color:#999;"><i class="fas fa-search" style="font-size:32px;display:block;margin-bottom:12px;"></i>Tidak ada data</div>';
+            return;
+        }
+
+        var html = '';
+        filtered.forEach(function(item, index) {
+            var statusClass = item.status.toLowerCase().replace(' ', '-');
+            var photoUrl = item.photo_id ? 'https://drive.google.com/thumbnail?id=' + item.photo_id + '&sz=w1000' : null;
+            var photoUrlRaw = item.photo_id ? 'https://drive.google.com/uc?export=view&id=' + item.photo_id : null;
+            
+            var photoHtml = photoUrl ?
+                '<img src="' + photoUrl + '" alt="' + item.counter + '" />' :
+                '<div class="placeholder-icon"><i class="fas fa-store"></i></div>';
+
+            var contactsHtml = '';
+            if (item.kontak && item.kontak.length > 0) {
+                var first = item.kontak[0];
+                contactsHtml += '<span class="contact-item"><i class="fab fa-whatsapp" style="color:#25D366;"></i> <a href="https://wa.me/' + first.nomor.replace(/[^0-9]/g, '') + '" target="_blank">' + first.nama + ' - ' + first.nomor + '</a></span>';
+                if (item.kontak.length > 1) {
+                    contactsHtml += '<button class="contact-more-btn" onclick="showContactModal(' + item.id + ')"><i class="fas fa-chevron-down"></i> +' + (item.kontak.length - 1) + ' lainnya</button>';
+                }
+            } else {
+                contactsHtml = '<span style="color:#999;font-size:13px;">Tidak ada kontak</span>';
+            }
+
+            var emailHtml = item.email ? '<div class="email-info"><i class="fas fa-envelope"></i> ' + item.email + '</div>' : '';
+
+            var actionButtons = '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(item.jalan + ', Bali') + '" target="_blank" class="btn btn-map"><i class="fas fa-map-marked-alt"></i> Maps</a>';
+            if (item.kontak && item.kontak.length > 0) {
+                var nomorUtama = item.kontak[0].nomor.replace(/[^0-9]/g, '');
+                actionButtons = '<a href="https://wa.me/' + nomorUtama + '" target="_blank" class="btn btn-wa"><i class="fab fa-whatsapp"></i> WA</a>' + actionButtons;
+            }
+            if (isOwner) {
+                actionButtons = '<button class="btn btn-edit" onclick="openEditModal(' + item.id + ')"><i class="fas fa-edit"></i> Edit</button>' + actionButtons + '<button class="btn btn-delete-card" onclick="deleteCounter(' + item.id + ')"><i class="fas fa-trash"></i></button>';
+            }
+
+            var dragHandleHtml = isOwner ? '<div class="drag-handle" draggable="true" ondragstart="onDragStart(event, ' + index + ')" ondragend="onDragEnd(event)"><i class="fas fa-grip-vertical"></i> Seret untuk urutkan</div>' : '';
+
+            // ===== TOMBOL FOTO: Kamera (via GitHub Pages) & Upload file =====
+            var photoActionsHtml = '<div class="photo-actions">';
+            if (isOwner) {
+                // Buka popup kamera dari GitHub Pages
+                photoActionsHtml += '<button onclick="openCameraPopup(' + item.id + ')" title="Ambil Foto (Kamera)"><i class="fas fa-camera"></i></button>';
+                // Upload file langsung
+                photoActionsHtml += '<button onclick="openFileUpload(' + item.id + ')" title="Upload dari Device"><i class="fas fa-upload"></i></button>';
+            }
+            if (photoUrlRaw) {
+                photoActionsHtml += '<button onclick="openLightbox(\'' + photoUrlRaw + '\')" title="Perbesar"><i class="fas fa-expand"></i></button>';
+                photoActionsHtml += '<button onclick="downloadPhoto(\'' + photoUrlRaw + '\', \'' + item.counter + '\')" title="Unduh"><i class="fas fa-download"></i></button>';
+                if (isOwner) {
+                    photoActionsHtml += '<button onclick="deletePhoto(' + item.id + ')" title="Hapus Foto"><i class="fas fa-trash"></i></button>';
+                }
+            }
+            photoActionsHtml += '</div>';
+
+            html += '<div class="card-item" draggable="' + isOwner + '" ondragover="onDragOver(event)" ondrop="onDrop(event, ' + index + ')" data-index="' + index + '">' +
+                dragHandleHtml +
+                '<div class="photo-wrap">' + photoHtml +
+                photoActionsHtml +
+                '</div>' +
+                '<div class="cname">' + item.counter + '</div>' +
+                '<div class="street"><i class="fas fa-map-pin"></i> ' + item.jalan + '</div>' +
+                '<div class="contact-list">' + contactsHtml + '</div>' +
+                emailHtml +
+                '<div class="status ' + statusClass + '">' + item.status + '</div>' +
+                (item.catatan ? '<div style="font-size:13px;color:#555;margin:4px 0 8px;background:#f8fafc;padding:6px 12px;border-radius:8px;"><i class="fas fa-sticky-note"></i> ' + item.catatan + '</div>' : '') +
+                '<div class="actions">' + actionButtons + '</div>' +
+                '</div>';
+        });
+        container.innerHTML = html;
+
+        // Chart
+        var areaMap = {};
+        var statusMap = {};
+        filtered.forEach(function(c) {
+            areaMap[c.area] = (areaMap[c.area] || 0) + 1;
+            statusMap[c.status] = (statusMap[c.status] || 0) + 1;
+        });
+        var areaLabels = Object.keys(areaMap);
+        var areaData = Object.values(areaMap);
+        var statusLabels = Object.keys(statusMap);
+        var statusData = Object.values(statusMap);
+
+        if (areaChartInstance) areaChartInstance.destroy();
+        if (statusChartInstance) statusChartInstance.destroy();
+
+        var ctx1 = document.getElementById('areaChart').getContext('2d');
+        var ctx2 = document.getElementById('statusChart').getContext('2d');
+
+        areaChartInstance = new Chart(ctx1, {
+            type: 'bar',
+            data: { labels: areaLabels, datasets: [{ label: 'Counter', data: areaData, backgroundColor: ['#1e3c72','#2a5298','#3a6bb0','#5a8bc9','#8bb3e0'] }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } }
+        });
+        statusChartInstance = new Chart(ctx2, {
+            type: 'doughnut',
+            data: { labels: statusLabels, datasets: [{ data: statusData, backgroundColor: ['#28a745','#dc3545','#ffc107'] }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, fontSize: 10 } } } }
+        });
+        updateAreaDatalist();
+    }
+
+    function updateAreaDatalist() {
+        var areas = [];
+        counters.forEach(function(c){ if(areas.indexOf(c.area) === -1) areas.push(c.area); });
+        var datalist = document.getElementById('areaList');
+        datalist.innerHTML = areas.map(function(a){ return '<option value="' + a + '">'; }).join('');
+    }
+
+    // ================================================================
+    // CONTACT MODAL
+    // ================================================================
+    function showContactModal(id) {
+        var item = counters.find(function(c) { return c.id === id; });
+        if (!item || !item.kontak || item.kontak.length <= 1) return;
+        var list = document.getElementById('contactList');
+        list.innerHTML = item.kontak.map(function(k) {
+            var nomor = k.nomor.replace(/[^0-9]/g, '');
+            return '<div class="contact-item-modal"><i class="fab fa-whatsapp" style="color:#25D366;font-size:20px;"></i> <a href="https://wa.me/' + nomor + '" target="_blank"><strong>' + k.nama + '</strong> - ' + k.nomor + '</a></div>';
+        }).join('');
+        document.getElementById('contactModal').classList.add('active');
+    }
+    function closeContactModal() {
+        document.getElementById('contactModal').classList.remove('active');
+    }
+
+    // ================================================================
+    // KAMERA POPUP (GitHub Pages)
+    // ================================================================
+    function openCameraPopup(id) {
+        if (!isOwner) {
+            showToast('Hanya owner yang dapat menambah/mengganti foto.');
+            return;
+        }
+        // URL GitHub Pages untuk halaman kamera
+        var cameraUrl = 'https://medsosinfiniti-beep.github.io/bali-counter-camera/camera.html?id=' + id;
+        // Buka di tab/popup baru
+        window.open(cameraUrl, '_blank', 'width=480,height=700,menubar=no,toolbar=no,location=no');
+        showToast('📸 Buka popup kamera. Ambil foto dan unggah.');
+    }
+
+    // ================================================================
+    // UPLOAD FILE (langsung dari device)
+    // ================================================================
+    function openFileUpload(id) {
+        if (!isOwner) {
+            showToast('Hanya owner yang dapat mengunggah foto.');
+            return;
+        }
+        currentUploadCounterId = id;
+        document.getElementById('fileUploadInput').click();
+    }
+
+    // Event listener untuk upload file
+    document.getElementById('fileUploadInput').addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+
+        var id = currentUploadCounterId;
+        if (!id) {
+            showToast('Error: ID counter tidak ditemukan.');
+            e.target.value = '';
+            return;
+        }
+
+        var item = counters.find(function(c) { return c.id === id; });
+        if (!item) {
+            showToast('Error: Data counter tidak ditemukan.');
+            e.target.value = '';
+            return;
+        }
+
+        showToast('📤 Mengunggah dari device...');
+
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            var base64Data = ev.target.result;
+            var filename = item.counter + '_photo.jpg';
+
+            google.script.run
+                .withSuccessHandler(function(newPhotoId) {
+                    if (newPhotoId) {
+                        item.photo_id = newPhotoId;
+                        google.script.run
+                            .withSuccessHandler(function() {
+                                loadData();
+                                showToast('✅ Foto berhasil diperbarui!');
+                            })
+                            .withFailureHandler(function(err) {
+                                showToast('Gagal menyimpan foto: ' + err.message);
+                            })
+                            .saveCounter(item);
+                    } else {
+                        showToast('Gagal mengupload foto.');
+                    }
+                })
+                .withFailureHandler(function(err) {
+                    showToast('Gagal upload: ' + err.message);
+                })
+                .uploadPhotoToDrive(base64Data, filename);
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    });
+
+    // ================================================================
+    // DRAG & DROP
+    // ================================================================
+    function onDragStart(e, index) {
+        dragStartIndex = index;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', index);
+        setTimeout(function(){ e.target.closest('.card-item').classList.add('dragging'); }, 0);
+    }
+    function onDragEnd(e) {
+        document.querySelectorAll('.card-item').forEach(function(el){ el.classList.remove('dragging', 'drag-over'); });
+    }
+    function onDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        document.querySelectorAll('.card-item').forEach(function(el){ el.classList.remove('drag-over'); });
+        var target = e.target.closest('.card-item');
+        if (target) target.classList.add('drag-over');
+    }
+    function onDrop(e, dropIndex) {
+        e.preventDefault();
+        document.querySelectorAll('.card-item').forEach(function(el){ el.classList.remove('drag-over', 'dragging'); });
+        if (dragStartIndex === null || dragStartIndex === dropIndex) return;
+        var item = counters.splice(dragStartIndex, 1)[0];
+        counters.splice(dropIndex, 0, item);
+        var orderedIds = counters.map(function(c){ return c.id; });
+        google.script.run.withSuccessHandler(function() {
+            renderCards();
+            showToast('🔄 Urutan counter diperbarui.');
+        }).withFailureHandler(function(err) {
+            showToast('Gagal menyimpan urutan: ' + err.message);
+        }).updateOrder(orderedIds);
+        dragStartIndex = null;
+    }
+
+    // ================================================================
+    // EDIT, ADD, DELETE
+    // ================================================================
+    function openAddModal() {
+        if (!isOwner) { showToast('Hanya owner yang dapat menambah data.'); return; }
+        editingId = null;
+        tempPhotoData = null;
+        document.getElementById('editModalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Tambah Counter';
+        document.getElementById('editForm').reset();
+        document.getElementById('editId').value = '';
+        document.getElementById('editPhotoPreview').style.display = 'none';
+        document.getElementById('editPhotoImg').src = '';
+        document.getElementById('editModal').classList.add('active');
+        updateAreaDatalist();
+    }
+
+    function openEditModal(id) {
+        if (!isOwner) { showToast('Hanya owner yang dapat mengedit data.'); return; }
+        var item = counters.find(function(c){ return c.id === id; });
+        if (!item) return;
+        editingId = id;
+        tempPhotoData = null;
+        document.getElementById('editModalTitle').innerHTML = '<i class="fas fa-pen"></i> Edit Counter';
+        document.getElementById('editId').value = id;
+        document.getElementById('editCounter').value = item.counter;
+        document.getElementById('editJalan').value = item.jalan;
+        document.getElementById('editArea').value = item.area;
+        document.getElementById('editKontak').value = item.kontak.map(function(k){ return k.nama + ' - ' + k.nomor; }).join('\n');
+        document.getElementById('editEmail').value = item.email || '';
+        document.getElementById('editStatus').value = item.status;
+        document.getElementById('editCatatan').value = item.catatan || '';
+        if (item.photo_id) {
+            var url = 'https://drive.google.com/uc?export=view&id=' + item.photo_id;
+            document.getElementById('editPhotoPreview').style.display = 'block';
+            document.getElementById('editPhotoImg').src = url;
+            document.getElementById('editPhotoPreview').dataset.photoId = item.photo_id;
+        } else {
+            document.getElementById('editPhotoPreview').style.display = 'none';
+            document.getElementById('editPhotoImg').src = '';
+            document.getElementById('editPhotoPreview').dataset.photoId = '';
+        }
+        document.getElementById('editModal').classList.add('active');
+        updateAreaDatalist();
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').classList.remove('active');
+        tempPhotoData = null;
+    }
+
+    function handlePhotoUpload(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            tempPhotoData = ev.target.result;
+            document.getElementById('editPhotoPreview').style.display = 'block';
+            document.getElementById('editPhotoImg').src = tempPhotoData;
+            showToast('Foto berhasil diunggah (1:1)');
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    }
+
+    function removePhoto() {
+        tempPhotoData = null;
+        document.getElementById('editPhotoPreview').style.display = 'none';
+        document.getElementById('editPhotoImg').src = '';
+        document.getElementById('editPhotoPreview').dataset.photoId = '';
+        showToast('Foto dihapus dari form');
+    }
+
+    function saveEdit(e) {
+        e.preventDefault();
+        var id = parseInt(document.getElementById('editId').value) || Date.now();
+        var counter = document.getElementById('editCounter').value.trim();
+        var jalan = document.getElementById('editJalan').value.trim();
+        var area = document.getElementById('editArea').value.trim();
+        var kontakRaw = document.getElementById('editKontak').value.trim();
+        var email = document.getElementById('editEmail').value.trim();
+        var status = document.getElementById('editStatus').value;
+        var catatan = document.getElementById('editCatatan').value.trim();
+
+        if (!counter || !jalan || !area) { showToast('Nama Counter, Jalan, dan Area wajib diisi.'); return; }
+
+        var kontak = kontakRaw.split('\n').map(function(line){ return line.trim(); }).filter(Boolean).map(function(line) {
+            var sep = line.includes(' - ') ? ' - ' : line.includes('-') ? '-' : '|';
+            var parts = line.split(sep).map(function(s){ return s.trim(); });
+            if (parts.length >= 2) return { nama: parts[0], nomor: parts.slice(1).join(' ') };
+            return { nama: line, nomor: '' };
+        }).filter(function(k){ return k.nomor; });
+
+        var photoId = null;
+        if (tempPhotoData) {
+            google.script.run.withSuccessHandler(function(newPhotoId) {
+                photoId = newPhotoId;
+                finishSave();
+            }).withFailureHandler(function(err) {
+                showToast('Gagal upload foto: ' + err.message);
+            }).uploadPhotoToDrive(tempPhotoData, counter + '.jpg');
+        } else {
+            var existing = counters.find(function(c){ return c.id === id; });
+            photoId = existing ? existing.photo_id : null;
+            finishSave();
+        }
+
+        function finishSave() {
+            var newItem = { id: id, area: area, jalan: jalan, counter: counter, kontak: kontak, email: email, status: status, catatan: catatan, photo_id: photoId, order: 0 };
+            google.script.run.withSuccessHandler(function() {
+                closeEditModal();
+                loadData();
+                showToast('✅ Data berhasil disimpan!');
+            }).withFailureHandler(function(err) {
+                showToast('Gagal menyimpan: ' + err.message);
+            }).saveCounter(newItem);
+        }
+    }
+
+    function deleteCounter(id) {
+        if (!isOwner) { showToast('Hanya owner yang dapat menghapus data.'); return; }
+        showConfirmModal('Yakin hapus counter ini?').then(function(ok) {
+            if (ok) {
+                google.script.run.withSuccessHandler(function() {
+                    loadData();
+                    showToast('🗑️ Data dihapus.');
+                }).withFailureHandler(function(err) {
+                    showToast('Gagal menghapus: ' + err.message);
+                }).deleteCounter(id);
+            }
+        });
+    }
+
+    function deletePhoto(id) {
+        if (!isOwner) { showToast('Hanya owner yang dapat menghapus foto.'); return; }
+        showConfirmModal('Hapus foto ini?').then(function(ok) {
+            if (ok) {
+                var item = counters.find(function(c){ return c.id === id; });
+                if (item) {
+                    item.photo_id = null;
+                    google.script.run.withSuccessHandler(function() {
+                        loadData();
+                        showToast('Foto dihapus.');
+                    }).withFailureHandler(function(err) {
+                        showToast('Gagal menghapus foto: ' + err.message);
+                    }).saveCounter(item);
+                }
+            }
+        });
+    }
+
+    function openLightbox(src) {
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('lightboxOverlay').classList.add('active');
+    }
+    function closeLightbox() {
+        document.getElementById('lightboxOverlay').classList.remove('active');
+    }
+
+    function downloadPhoto(url, filename) {
+        fetch(url).then(function(res){ return res.blob(); }).then(function(blob) {
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename + '.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('📥 Foto sedang diunduh.');
+        }).catch(function() {
+            window.open(url, '_blank');
+        });
+    }
+
+    // ================================================================
+    // EXPORT & IMPORT
+    // ================================================================
+    function exportPDF() {
+        showToast('📄 Mencetak laporan... (gunakan "Save as PDF" di printer)');
+        window.print();
+    }
+
+    function showImportModal() {
+        document.getElementById('importSource').value = '';
+        document.getElementById('importResult').innerHTML = '';
+        document.getElementById('importModal').classList.add('active');
+    }
+    function closeImportModal() {
+        document.getElementById('importModal').classList.remove('active');
+    }
+    function handleImport() {
+        var source = document.getElementById('importSource').value.trim();
+        if (!source) { showToast('Masukkan ID atau URL sumber.'); return; }
+        document.getElementById('importResult').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menarik data...';
+        var id = source;
+        if (source.includes('docs.google.com/spreadsheets')) {
+            var match = source.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (match) id = match[1];
+        } else if (source.includes('drive.google.com')) {
+            var match = source.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (match) id = match[1];
+        }
+        if (source.includes('spreadsheets')) {
+            google.script.run.withSuccessHandler(function(response) {
+                if (response.success) {
+                    document.getElementById('importResult').innerHTML = '✅ ' + response.message;
+                    loadData();
+                } else {
+                    document.getElementById('importResult').innerHTML = '❌ ' + response.message;
+                }
+            }).withFailureHandler(function(err) {
+                document.getElementById('importResult').innerHTML = '❌ ' + err.message;
+            }).importFromSheet(id, 'Sheet1');
+        } else {
+            google.script.run.withSuccessHandler(function(response) {
+                if (response.success) {
+                    document.getElementById('importResult').innerHTML = '✅ ' + response.message;
+                    loadData();
+                } else {
+                    document.getElementById('importResult').innerHTML = '❌ ' + response.message;
+                }
+            }).withFailureHandler(function(err) {
+                document.getElementById('importResult').innerHTML = '❌ ' + err.message;
+            }).importFromDrive(id);
+        }
+    }
+
+    // ================================================================
+    // AI HELP
+    // ================================================================
+    function setupHelpButton() {
+        var helpBtn = document.getElementById('helpBtn');
+        google.script.run.withSuccessHandler(function(response) {
+            if (response && response.success && response.message && response.message.indexOf('belum aktif') > -1) {
+                helpBtn.style.opacity = '0.6';
+                helpBtn.style.cursor = 'not-allowed';
+                helpBtn.onclick = function() {
+                    showToast('Fitur Bantuan AI belum aktif. Silakan hubungi owner untuk aktivasi.');
+                };
+            } else {
+                helpBtn.style.opacity = '1';
+                helpBtn.style.cursor = 'pointer';
+                helpBtn.onclick = function() {
+                    showToast('🤖 Bantuan AI: Menganalisis data...');
+                    var prompt = 'Berikan analisis singkat tentang data counter Bali berdasarkan area dan status.';
+                    google.script.run.withSuccessHandler(function(aiResponse) {
+                        if (aiResponse.success) {
+                            showToast('AI: ' + aiResponse.data);
+                        } else {
+                            showToast('AI: ' + aiResponse.message);
+                        }
+                    }).withFailureHandler(function(err) {
+                        showToast('Gagal memanggil AI: ' + err.message);
+                    }).callAI(prompt);
+                };
+            }
+        }).withFailureHandler(function() {
+            helpBtn.style.opacity = '0.6';
+            helpBtn.style.cursor = 'not-allowed';
+            helpBtn.onclick = function() {
+                showToast('Fitur Bantuan AI belum aktif. Silakan hubungi owner untuk aktivasi.');
+            };
+        }).callAI('ping');
+    }
+
+    // ================================================================
+    // EVENT LISTENERS
+    // ================================================================
+    document.getElementById('filterArea').addEventListener('change', function() {
+        currentFilterArea = this.value;
+        renderCards();
+    });
+    document.getElementById('searchInput').addEventListener('input', function() {
+        currentSearch = this.value;
+        renderCards();
+    });
+
+    // ================================================================
+    // SESSION CHECK
+    // ================================================================
+    (function checkSession() {
+        var isLoggedIn = sessionStorage.getItem('isLoggedIn');
+        if (isLoggedIn === 'true') {
+            currentUser = sessionStorage.getItem('username');
+            var role = sessionStorage.getItem('role');
+            isOwner = (role === 'owner');
+            
+            document.getElementById('displayUser').textContent = currentUser;
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'flex';
+            var fabAdd = document.getElementById('fabAdd');
+            fabAdd.style.display = isOwner ? 'flex' : 'none';
+            loadData();
+            showToast('Selamat datang kembali, ' + currentUser + '!');
+        } else {
+            showLogin();
+        }
+    })();
+
+    console.log('✅ Aplikasi siap!');
+</script>
+</body>
+</html>
